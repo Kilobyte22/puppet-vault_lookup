@@ -6,10 +6,11 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
     optional_param 'String', :cert_role
     optional_param 'String', :namespace
     optional_param 'String', :field
-    optional_param 'Enum["cert", "approle"]', :auth_method
+    optional_param 'Enum["cert", "approle", "token"]', :auth_method
     optional_param 'String', :role_id
     optional_param 'String', :secret_id
     optional_param 'Optional[String]', :approle_path_segment
+    optional_param 'String', :token_filename
     return_type 'Sensitive'
   end
 
@@ -41,7 +42,8 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
            options['auth_method'],
            options['role_id'],
            options['secret_id'],
-           options['approle_path_segment'])
+           options['approle_path_segment'],
+           options['token_filename'])
   end
 
   DEFAULT_CERT_PATH_SEGMENT = 'v1/auth/cert/'.freeze
@@ -60,7 +62,8 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
              auth_method = nil,
              role_id = nil,
              secret_id = nil,
-             approle_path_segment = nil)
+             approle_path_segment = nil,
+             token_filename = '~/.vault-token')
 
     if auth_method.nil?
       auth_method = ENV['VAULT_AUTH_METHOD'] || 'cert'
@@ -116,6 +119,10 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
                                      role_id,
                                      secret_id,
                                      namespace)
+    when 'token'
+      full_filename = File.expand_path(token_filename)
+      raise Puppet::Error, "Vault Token File #{full_filename} does not exist" unless File.exists?(full_filename)
+      token = File.read(full_filename)
     end
 
     secret_uri = vault_base_uri + "/v1/#{path.delete_prefix('/')}"
