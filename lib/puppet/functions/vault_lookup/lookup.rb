@@ -63,7 +63,7 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
              role_id = nil,
              secret_id = nil,
              approle_path_segment = nil,
-             token_filename = '~/.vault-token')
+             token_filename = nil)
 
     if auth_method.nil?
       auth_method = ENV['VAULT_AUTH_METHOD'] || 'cert'
@@ -77,6 +77,9 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
     if namespace.nil?
       Puppet.debug 'No Vault namespace was set on function, defaulting to value from VAULT_NAMESPACE env value'
       namespace = ENV['VAULT_NAMESPACE']
+    end
+    if token_filename.nil?
+      token_filename = '~/.vault-token'
     end
 
     if role_id.nil?
