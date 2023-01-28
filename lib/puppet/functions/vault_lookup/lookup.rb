@@ -122,6 +122,7 @@ Puppet::Functions.create_function(:'vault_lookup::lookup') do
     when 'token'
       full_filename = File.expand_path(token_filename)
       raise Puppet::Error, "Vault Token File #{full_filename} does not exist" unless File.exists?(full_filename)
+      Puppet.debug "Reading vault token from #{full_filename}"
       token = File.read(full_filename)
     end
 
