@@ -17,7 +17,9 @@ module PuppetX
                       role_id: nil,
                       secret_id: nil,
                       approle_path_segment: nil,
-                      agent_sink_file: nil)
+                      agent_sink_file: nil,
+                      method: nil,
+                      body: nil)
 
         if vault_addr.nil?
           Puppet.debug 'No Vault address was set on function, defaulting to value from VAULT_ADDR env value'
@@ -94,11 +96,20 @@ module PuppetX
         end
 
         secret_uri = vault_base_uri + "/v1/#{path.delete_prefix('/')}"
-        data = get_secret(client: client,
-                          uri: secret_uri,
-                          token: token,
-                          namespace: namespace,
-                          key: field)
+        if method.nil? or method == 'get'
+          data = get_secret(client: client,
+                            uri: secret_uri,
+                            token: token,
+                            namespace: namespace,
+                            key: field)
+        elsif method == 'put'
+          data = put_secret(client: client,
+                            uri: secret_uri,
+                            token: token,
+                            namespace: namespace,
+                            key: field,
+                            body: body)
+        end
 
         sensitive_data = Puppet::Pops::Types::PSensitiveType::Sensitive.new(data)
         Puppet.debug "Caching found data for #{path}"
@@ -117,6 +128,32 @@ module PuppetX
       def self.get_secret(client:, uri:, token:, namespace:, key:)
         headers = { 'X-Vault-Token' => token, 'X-Vault-Namespace' => namespace }.delete_if { |_key, value| value.nil? }
         secret_response = client.get(uri,
+                                     headers: headers,
+                                     options: { include_system_store: true })
+        unless secret_response.success?
+          message = "Received #{secret_response.code} response code from vault at #{uri} for secret lookup"
+          raise Puppet::Error, append_api_errors(message, secret_response)
+        end
+        begin
+          json_data = JSON.parse(secret_response.body)
+          if key.nil? && json_data['data'].key?('data')
+            json_data['data']['data']
+          elsif key.nil?
+            json_data['data']
+          elsif json_data['data'].key?('data')
+            json_data['data']['data'][key]
+          else
+            json_data['data'][key]
+          end
+        rescue StandardError
+          raise Puppet::Error, 'Error parsing json secret data from vault response'
+        end
+      end
+
+      def self.put_secret(client:, uri:, token:, namespace:, key:, body:)
+        headers = { 'Content-Type' => 'application/json', 'X-Vault-Token' => token, 'X-Vault-Namespace' => namespace }.delete_if { |_key, value| value.nil? }
+        secret_response = client.put(uri,
+                                     body,
                                      headers: headers,
                                      options: { include_system_store: true })
         unless secret_response.success?

@@ -50,7 +50,9 @@ Puppet::Functions.create_function(:'vault_lookup::lookup', Puppet::Functions::In
                                         role_id: options['role_id'],
                                         secret_id: options['secret_id'],
                                         approle_path_segment: options['approle_path_segment'],
-                                        agent_sink_file: options['agent_sink_file'])
+                                        agent_sink_file: options['agent_sink_file'],
+                                        method: options['method'],
+                                        body: options['body'])
   end
 
   # Lookup with a path and positional arguments.
@@ -68,7 +70,9 @@ Puppet::Functions.create_function(:'vault_lookup::lookup', Puppet::Functions::In
              role_id = nil,
              secret_id = nil,
              approle_path_segment = nil,
-             agent_sink_file = nil)
+             agent_sink_file = nil,
+             method = nil,
+             body = nil)
 
     PuppetX::VaultLookup::Lookup.lookup(cache: cache,
                                         path: path,
@@ -81,6 +85,8 @@ Puppet::Functions.create_function(:'vault_lookup::lookup', Puppet::Functions::In
                                         role_id: role_id,
                                         secret_id: secret_id,
                                         approle_path_segment: approle_path_segment,
-                                        agent_sink_file: agent_sink_file)
+                                        agent_sink_file: agent_sink_file,
+                                        method: method,
+                                        body: body)
   end
 end
