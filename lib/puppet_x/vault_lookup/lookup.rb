@@ -59,6 +59,7 @@ module PuppetX
         client = Puppet.runtime[:http]
 
         if auth_method == 'agent_sink' and not agent_sink_file.nil? and not Puppet::FileSystem.exist?(agent_sink_file)
+          Puppet.warning 'agent_sink_file not found. Falling back to cert auth!'
           auth_method = 'cert'
         end
 
