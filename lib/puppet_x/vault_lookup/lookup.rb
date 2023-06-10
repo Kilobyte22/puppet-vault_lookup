@@ -58,6 +58,10 @@ module PuppetX
 
         client = Puppet.runtime[:http]
 
+        if auth_method == 'agent_sink' and not agent_sink_file.nil? and not Puppet::FileSystem.exist?(agent_sink_file)
+          auth_method = 'cert'
+        end
+
         case auth_method
         when 'cert'
           token = get_cert_auth_token(client,
